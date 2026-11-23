@@ -590,6 +590,52 @@ function initWorld(){
       if(d<u.r+reach && b.position.y<2.6+k.position.y && d>0){ u.v.x=dx/d*10; u.v.z=dx===0&&dz===0?0:dz/d*10; u.v.y=Math.max(u.v.y,7); b.position.x=k.position.x+dx/d*(u.r+reach); b.position.z=k.position.z+dz/d*(u.r+reach);
         if(time-lastHit>.2){ lastHit=time; SFX[BALL_SFX[u.kind]]() } } }
   }
+  // ---- giant 3D IZZY letters ----
+  const LSHAPE={ // [x,y,w,h,rotZ] in cells (letter is 3 wide, 5 tall)
+    I:[[1,2,1,5,0],[1,4.5,3,1,0],[1,-.5+0.5,3,1,0]],
+    Z:[[1,4.5,3,1,0],[1,0,3,1,0],[1,2.25,1,4.6,-.62]],
+    Y:[[1,1,1,3,0],[.45,3.6,1,2.6,.55],[1.55,3.6,1,2.6,-.55]]
+  };
+  const CELL=.8, letters=[];
+  LETTERS.forEach(([ch,c,d],i)=>{
+    const pivot=new T.Group(), body=new T.Group(); pivot.add(body);
+    const face=new T.MeshStandardMaterial({color:c,roughness:.35,emissive:new T.Color(c),emissiveIntensity:.08}), side=new T.MeshStandardMaterial({color:d,roughness:.5});
+    const mats=[side,side,face,side,face,face];
+    for(const [x,y,w,h,rz] of LSHAPE[ch]){
+      const m=new T.Mesh(new T.BoxGeometry(w*CELL,h*CELL,.9),mats); m.position.set((x-1)*CELL,(y+.5)*CELL,0); m.rotation.z=rz; m.castShadow=true; m.receiveShadow=true; m.userData.letter=i; body.add(m);
+    }
+    const x=(i-1.5)*3.1; pivot.position.set(x,0,-5.6); pivot.rotation.y=-x*.03; scene.add(pivot);
+    letters.push({pivot,i,x,z:-5.6,ang:0,vel:0,axis:new T.Vector3(1,0,0),state:'up',t:0,cool:0});
+  });
+  const letterMeshes=[]; letters.forEach(L=>L.pivot.traverse(o=>{if(o.isMesh)letterMeshes.push(o)}));
+  const tmpV=new T.Vector3(), up=new T.Vector3(0,1,0);
+  function knock(L,fromX,fromZ,power=1){
+    if(L.state!=='up'||L.cool>0) return false;
+    let dx=L.x-fromX, dz=L.z-fromZ; const d=Math.hypot(dx,dz)||1; dx/=d; dz/=d;
+    L.axis.set(dz,0,-dx).normalize(); L.state='fall'; L.vel=3+2*power; L.t=0;
+    if(World.ready){ SFX.kick(); tone(220,.3,'square',.15,0,110) }
+    return true;
+  }
+  World.knockLetter=i=>{ const L=letters[i]; if(L) knock(L,L.x+(Math.random()-.5),L.z+3) };
+  function letterStep(dt){
+    for(const L of letters){
+      L.cool-=dt;
+      if(L.state==='fall'){ L.vel+=14*Math.sin(Math.max(.05,L.ang))*dt; L.ang+=L.vel*dt;
+        if(L.ang>=Math.PI/2){ L.ang=Math.PI/2; if(Math.abs(L.vel)>1.5){ L.vel=-L.vel*.3 } else { L.vel=0; L.state='down'; L.t=0 } } }
+      else if(L.state==='down'){ L.t+=dt; if(L.t>1.4){ L.state='rise'; L.vel=-3;
+          if(World.ready){ SFX.boing(); SFX.note(L.i); tmpV.set(L.x,3.5,L.z).project(camera); if(tmpV.z<1) burst((tmpV.x+1)/2*innerWidth,(1-tmpV.y)/2*innerHeight,35) } } }
+      else { L.vel+=(-50*L.ang-3.2*L.vel)*dt; L.ang+=L.vel*dt;
+        if(L.state==='rise'){ L.t+=dt; if(L.t>2.2){ L.state='up'; L.cool=1; L.ang=0; L.vel=0 } } }
+      L.pivot.quaternion.setFromAxisAngle(L.axis,L.ang).multiply(new T.Quaternion().setFromAxisAngle(up,-L.x*.03));
+      // things hitting a standing letter
+      if(L.state==='up'){
+        for(const b of balls){ const u=b.userData, dx=b.position.x-L.x, dz=b.position.z-L.z, d=Math.hypot(dx,dz);
+          if(d<1.5+u.r && b.position.y<4.2){ const sp=Math.hypot(u.v.x,u.v.z); if(knock(L,b.position.x-u.v.x*.1,b.position.z-u.v.z*.1,Math.min(2,sp/6))){} u.v.x=dx/(d||1)*Math.max(4,sp*.6); u.v.z=dz/(d||1)*Math.max(4,sp*.6) } }
+        if(World.walk) for(const k of [izzy,aj]){ const dx=k.position.x-L.x, dz=k.position.z-L.z, d=Math.hypot(dx,dz);
+          if(d<1.9){ knock(L,k.position.x,k.position.z,1.5); k.position.x=L.x+dx/(d||1)*1.9; k.position.z=L.z+dz/(d||1)*1.9 } }
+      }
+    }
+  }
   World.ok=true;
   applyPlayer();
   // tap a ball in the world
@@ -597,7 +643,9 @@ function initWorld(){
   addEventListener('pointerdown',e=>{
     if(!World.ready || e.target.closest('button,a,.panel,#start')) return;
     ndc.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); ray.setFromCamera(ndc,camera);
-    const hit=ray.intersectObjects(balls)[0]; if(!hit) return;
+    const lh=ray.intersectObjects(letterMeshes)[0], bh=ray.intersectObjects(balls)[0];
+    if(lh&&(!bh||lh.distance<bh.distance)){ const L=letters[lh.object.userData.letter]; knock(L,camera.position.x,camera.position.z,1.5); burst(e.clientX,e.clientY,20); return }
+    const hit=bh; if(!hit) return;
     const u=hit.object.userData; u.v.set((Math.random()-.5)*8,13,(Math.random()-.5)*6);
     SFX[BALL_SFX[u.kind]](); burst(e.clientX,e.clientY,30);
   });
@@ -633,7 +681,7 @@ function initWorld(){
       const sc=Math.min(1.5,scrollY/innerHeight);
       want.set(Math.sin(time*.12)*3.5+px*2.5, 4.2-py*1.2+sc*3, 17-sc*2); wantLook.set(0,2.2+sc*.5,0);
     }
-    petStep(dt);
+    petStep(dt); letterStep(dt);
     const kf=1-Math.exp(-dt*(World.walk?5:3)); camPos.lerp(want,kf); look.lerp(wantLook,kf);
     camera.position.copy(camPos); camera.lookAt(look);
     renderer.render(scene,camera); requestAnimationFrame(frame);
