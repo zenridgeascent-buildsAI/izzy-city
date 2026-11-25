@@ -88,8 +88,23 @@ body.create .cui{display:block}
 body.walk{overflow:hidden}
 .wui{display:none}
 body.walk .wui{display:grid}
-#exitWalk{position:fixed;left:max(3vw,14px);top:clamp(90px,10vh,120px);z-index:30;place-items:center;grid-auto-flow:column;gap:10px;font-family:"Luckiest Guy",Impact,sans-serif;font-size:clamp(24px,2.4vw,40px);color:#fff;background:var(--navy);border:6px solid #fff;border-radius:999px;padding:.3em .9em .15em;box-shadow:0 8px 0 rgba(0,0,0,.25)}
-#exitWalk svg{width:1em;height:1em}
+body.troph main{opacity:0;pointer-events:none;visibility:hidden}
+body.troph{overflow:hidden}
+.trophyBtn{background:var(--navy);color:var(--sun);box-shadow:0 10px 0 #0a1238}
+.trophyBtn svg{animation:none}
+.trophyBtn .tc{font-size:.6em;background:var(--sun);color:var(--navy);border-radius:999px;padding:.15em .5em 0}
+.tui{display:none}
+body.troph .tui{display:block}
+#exitTroph{position:fixed;left:max(3vw,14px);top:clamp(90px,10vh,120px);z-index:30}
+.tlist{position:fixed;left:0;right:0;bottom:max(3vh,12px);z-index:30;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 12px;pointer-events:none}
+.tchip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);border:4px solid #fff;border-radius:999px;padding:6px 16px 4px 8px;font-weight:700;font-size:clamp(15px,1.3vw,22px);box-shadow:0 5px 0 rgba(20,33,90,.2)}
+.tchip i{width:1.5em;height:1.5em;border-radius:50%;background:var(--m);border:3px solid #fff;box-shadow:0 0 0 2px rgba(20,33,90,.25)}
+.tchip.lock{opacity:.55}.tchip.lock i{background:#b8c0d8}
+.ttitle{display:none;position:fixed;top:clamp(90px,10vh,120px);left:50%;transform:translateX(-50%);z-index:30;margin:0;font-family:"Luckiest Guy",Impact,sans-serif;font-weight:400;font-size:clamp(34px,4vw,64px);color:#fff;text-shadow:0 5px 0 var(--navy);white-space:nowrap}
+@media (max-width:700px){.ttitle{top:auto;bottom:46vh}}
+#exitWalk,#exitTroph{position:fixed;left:max(3vw,14px);top:clamp(90px,10vh,120px);z-index:30;place-items:center;grid-auto-flow:column;gap:10px;font-family:"Luckiest Guy",Impact,sans-serif;font-size:clamp(24px,2.4vw,40px);color:#fff;background:var(--navy);border:6px solid #fff;border-radius:999px;padding:.3em .9em .15em;box-shadow:0 8px 0 rgba(0,0,0,.25)}
+#exitTroph{display:none}body.troph #exitTroph{display:grid}
+#exitWalk svg,#exitTroph svg{width:1em;height:1em}
 #stick,#jumpBtn{position:fixed;z-index:30;bottom:max(5vh,22px);touch-action:none;-webkit-user-select:none;user-select:none}
 #stick{left:max(4vw,22px);width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.35);border:6px solid #fff}
 #knob{position:absolute;left:50%;top:50%;width:78px;height:78px;margin:-39px;border-radius:50%;background:var(--sun);border:5px solid #fff;box-shadow:0 6px 0 #c98f00;pointer-events:none}
@@ -163,6 +178,7 @@ footer{text-align:center;padding:10px 16px 60px;font-family:"Luckiest Guy",Impac
     <div class="cta">
     <button class="go-down explore" data-nav id="explore">Explore <svg viewBox="0 0 100 100"><path d="M24 12L88 50L24 88Z" fill="#fff"/></svg></button>
     <button class="go-down player" data-nav id="playerBtn">My Player <svg viewBox="0 0 100 100"><path d="M34 8L14 16L2 38L18 46L22 42L22 94L78 94L78 42L82 46L98 38L86 16L66 8Q50 22 34 8Z" fill="#fff"/></svg></button>
+    <button class="go-down trophyBtn" data-nav id="trophyBtn">Trophies <span class="tc" id="tCount">0</span></button>
     <button class="go-down" data-nav id="toGames">My Games <svg viewBox="0 0 100 100"><path d="M20 35l30 30 30-30" fill="none" stroke="#14215a" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
   </section>
@@ -186,6 +202,8 @@ footer{text-align:center;padding:10px 16px 60px;font-family:"Luckiest Guy",Impac
 <button class="wui" id="exitWalk" aria-label="Back"><svg viewBox="0 0 100 100"><path d="M62 16L28 50l34 34" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</button>
 <div class="wui" id="stick" aria-hidden="true"><div id="knob"></div></div>
 <button class="wui" id="jumpBtn" aria-label="Jump">Jump</button>
+<button class="wui-t" id="exitTroph" data-nav aria-label="Back"><svg viewBox="0 0 100 100"><path d="M62 16L28 50l34 34" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</button>
+<div class="tui"><p class="ttitle" id="tTitle">My Trophies</p><div class="tlist" id="tList"></div></div>
 <section class="cui" id="creator" aria-label="My Player">
   <div class="cpanel">
     <h2>My Player</h2>
@@ -294,11 +312,11 @@ let drawing=false, lastP=null;
 function stroke(a,b){ pc.strokeStyle=pen; pc.lineWidth=18; pc.lineCap='round'; pc.lineJoin='round'; pc.beginPath(); pc.moveTo(a[0],a[1]); pc.lineTo(b[0],b[1]); pc.stroke(); hasLogo=true; applyPlayer() }
 pad.addEventListener('pointerdown',e=>{ e.preventDefault(); drawing=true; pad.setPointerCapture(e.pointerId); lastP=padPos(e); stroke(lastP,[lastP[0]+.1,lastP[1]]) });
 pad.addEventListener('pointermove',e=>{ if(!drawing) return; const q=padPos(e); stroke(lastP,q); lastP=q });
-const endDraw=()=>{ if(!drawing) return; drawing=false; player.logo=pad.toDataURL(); savePlayer(); SFX.tick() };
+const endDraw=()=>{ if(!drawing) return; drawing=false; player.logo=pad.toDataURL(); savePlayer(); SFX.tick(); award('logo') };
 pad.addEventListener('pointerup',endDraw); pad.addEventListener('pointercancel',endDraw);
 $('#creator').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return; initAudio();
-  if(b.dataset.k){ const k=b.dataset.k; player[k]=b.dataset.v; SFX.note(Math.floor(Math.random()*4)); if(k==='pet') say(PET_SAY[b.dataset.v]); burst(...centerOf(b),12) }
+  if(b.dataset.k){ const k=b.dataset.k; player[k]=b.dataset.v; SFX.note(Math.floor(Math.random()*4)); if(k==='pet'){ say(PET_SAY[b.dataset.v]); if(b.dataset.v!=='none') setTimeout(()=>award('pet'),900) } burst(...centerOf(b),12) }
   else if(b.dataset.pen){ pen=b.dataset.pen; SFX.tick() }
   else if(b.id==='padClear'){ pc.clearRect(0,0,256,256); hasLogo=false; player.logo=''; SFX.soon() }
   else if(b.id==='numUp'||b.id==='numDown'){ player.num=((+player.num||0)+(b.id==='numUp'?1:99))%100; SFX.tick() }
@@ -390,7 +408,51 @@ const centerOf = el => { const r=el.getBoundingClientRect(); return [r.left+r.wi
 let toastT; function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1600) }
 
 /* ---------- 3D world ---------- */
-const World = { throwBall(){}, ready:false, ok:false, walk:false, keys:{}, pad:{x:0,y:0}, touch:{x:0,y:0}, jump:false, create:false, setWalk(){}, setCreate(){} };
+/* ---------- trophies ----------
+   Games can award a trophy two ways (same site, so they share storage):
+   1) link back to the homepage with  ../#trophy-<id>   e.g. ../#trophy-hoop-shot-star
+   2) push an id into localStorage 'izzy-trophies-new' (a JSON array); it is awarded with fanfare next visit. */
+const METAL={gold:'#ffc93c',silver:'#d9e2ef',bronze:'#d08a4a'};
+const slugOf = url => url.replace(/^.*izzy-city\//,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase();
+const TROPHIES=[
+  {id:'explore',name:'Explorer',metal:'gold'},
+  {id:'letters',name:'Letter Smasher',metal:'gold'},
+  {id:'player',name:'My Player',metal:'silver'},
+  {id:'logo',name:'Artist',metal:'silver'},
+  {id:'pet',name:'Pet Pal',metal:'bronze'},
+  {id:'night',name:'Night Owl',metal:'bronze'},
+  ...GAMES.filter(g=>g.status==='ready'&&g.url).map(g=>({id:'game-'+slugOf(g.url),name:g.title,metal:'gold'}))
+];
+let earned=[]; try{ earned=JSON.parse(localStorage.getItem('izzy-trophies')||'[]') }catch(e){}
+const pendingT=[];
+{ const add=id=>{ id=String(id).toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40); if(id&&!earned.includes(id)){ earned.push(id); pendingT.push(id) } };
+  const m=location.hash.match(/^#trophy-([a-z0-9-]+)$/i); if(m){ add(m[1]); try{ history.replaceState(null,'',location.pathname+location.search) }catch(e){} }
+  try{ JSON.parse(localStorage.getItem('izzy-trophies-new')||'[]').forEach(add); localStorage.removeItem('izzy-trophies-new') }catch(e){}
+  try{ localStorage.setItem('izzy-trophies',JSON.stringify(earned)) }catch(e){} }
+for(const id of earned) if(!TROPHIES.some(t=>t.id===id)) TROPHIES.push({id,name:id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),metal:'bronze'});
+const tInfo = id => TROPHIES.find(t=>t.id===id);
+function renderTrophies(){
+  const n=TROPHIES.filter(t=>earned.includes(t.id)).length;
+  $('#tCount').textContent=n+'/'+TROPHIES.length; $('#tTitle').textContent='My Trophies '+n+'/'+TROPHIES.length;
+  $('#tList').innerHTML=TROPHIES.map(t=>`<span class="tchip ${earned.includes(t.id)?'':'lock'}" style="--m:${METAL[t.metal]}"><i></i>${t.name}</span>`).join('');
+}
+const tQueue=[];
+function celebrate(){
+  const t=tInfo(tQueue[0]);
+  if(t){ [523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.32,i<4?'triangle':'square',i<4?.3:.12,i*.11)); noise(1,.2,.5,1400);
+    toast('Trophy! '+t.name); burst(innerWidth/2,innerHeight*.45,110); say('You won a trophy! '+t.name);
+    if(World.firework){ World.firework(-5,11,-10,METAL[t.metal]); setTimeout(()=>World.firework(5,12,-12,0xffffff),350) } }
+  if(World.refreshTrophies) World.refreshTrophies(tQueue[0]);
+  setTimeout(()=>{ tQueue.shift(); if(tQueue.length) celebrate() },2800);
+}
+function award(id){
+  if(!tInfo(id)||(earned.includes(id)&&!pendingT.includes(id))) return;
+  if(!earned.includes(id)){ earned.push(id); try{ localStorage.setItem('izzy-trophies',JSON.stringify(earned)) }catch(e){} }
+  const k=pendingT.indexOf(id); if(k>=0) pendingT.splice(k,1);
+  renderTrophies(); tQueue.push(id); if(tQueue.length===1) celebrate();
+}
+renderTrophies();
+const World = { throwBall(){}, troph:false, setTroph(){}, ready:false, ok:false, walk:false, keys:{}, pad:{x:0,y:0}, touch:{x:0,y:0}, jump:false, create:false, setWalk(){}, setCreate(){} };
 function initWorld(){
   if(!window.THREE) return;
   const T = THREE, canvas = $('#world');
@@ -528,7 +590,7 @@ function initWorld(){
   World.setCreate=on=>{
     World.create=on; document.body.classList.toggle('create',on);
     if(on){ scrollTo(0,0); izzy.position.set(-1.2,0,4); aj.position.set(-3.6,0,3); aj.rotation.y=.4; SFX.chime(); say('Make your player!'); setTimeout(()=>document.querySelector('#creator .swb').focus({preventScroll:true}),100) }
-    else { izzy.rotation.y=0; SFX.cheer(); burst(innerWidth/2,innerHeight*.4,80); say('Looking good, Izzy!'); $('#playerBtn').focus({preventScroll:true}) }
+    else { izzy.rotation.y=0; SFX.cheer(); burst(innerWidth/2,innerHeight*.4,80); say('Looking good, Izzy!'); setTimeout(()=>award('player'),1800); $('#playerBtn').focus({preventScroll:true}) }
   };
   izzy.position.set(-1.2,0,4); aj.position.set(1,0,4.5);
   function animKid(k,dt,speed,wave){
@@ -567,7 +629,7 @@ function initWorld(){
   let cool=0, lastHit=0; const camPos=new T.Vector3(0,4.2,17), look=new T.Vector3(0,2.2,0), want=new T.Vector3(), wantLook=new T.Vector3();
   World.setWalk=on=>{
     World.walk=on; document.body.classList.toggle('walk',on);
-    if(on){ scrollTo(0,0); izzy.position.set(0,0,5); aj.position.set(1.6,0,6); SFX.chime(); say("Let's go!"); if(document.activeElement) document.activeElement.blur() }
+    if(on){ scrollTo(0,0); izzy.position.set(0,0,5); aj.position.set(1.6,0,6); SFX.chime(); say("Let's go!"); setTimeout(()=>award('explore'),1500); if(document.activeElement) document.activeElement.blur() }
     else { $('#explore').focus({preventScroll:true}) }
   };
   World.doJump=()=>{ if(izzy.position.y<.05){ hop(izzy,9); SFX.boing(); setTimeout(()=>hop(aj,8),180) } };
@@ -587,7 +649,7 @@ function initWorld(){
     cool-=dt;
     for(const p of portals){ const d=Math.hypot(izzy.position.x-p.x,izzy.position.z-p.z);
       if(d<2.4 && cool<=0){ cool=1.6;
-        if(p.ready){ firework(p.x,7,p.z,p.g.color); firework(p.x+2,9,p.z,0xffd23f); SFX.chime(); toast(p.g.title+'!'); burst(innerWidth/2,innerHeight/2,90); setTimeout(()=>location.href=p.g.url,800) }
+        if(p.ready){ award('game-'+slugOf(p.g.url)); firework(p.x,7,p.z,p.g.color); firework(p.x+2,9,p.z,0xffd23f); SFX.chime(); toast(p.g.title+'!'); burst(innerWidth/2,innerHeight/2,90); setTimeout(()=>location.href=p.g.url,800) }
         else { SFX.soon(); toast('Coming soon!'); izzy.position.x+=(izzy.position.x-p.x)/d*1.4; izzy.position.z+=(izzy.position.z-p.z)/d*1.4 } } }
   }
   function kick(k,reach){
@@ -601,7 +663,7 @@ function initWorld(){
     Z:[[1,4.5,3,1,0],[1,0,3,1,0],[1,2.25,1,4.6,-.62]],
     Y:[[1,1,1,3,0],[.45,3.6,1,2.6,.55],[1.55,3.6,1,2.6,-.55]]
   };
-  const CELL=.8, letters=[];
+  const CELL=.8, letters=[], knocked=new Set();
   LETTERS.forEach(([ch,c,d],i)=>{
     const pivot=new T.Group(), body=new T.Group(); pivot.add(body);
     const face=new T.MeshStandardMaterial({color:c,roughness:.35,emissive:new T.Color(c),emissiveIntensity:.08}), side=new T.MeshStandardMaterial({color:d,roughness:.5});
@@ -618,6 +680,7 @@ function initWorld(){
     if(L.state!=='up'||L.cool>0) return false;
     let dx=L.x-fromX, dz=L.z-fromZ; const d=Math.hypot(dx,dz)||1; dx/=d; dz/=d;
     L.axis.set(dz,0,-dx).normalize(); L.state='fall'; L.vel=3+2*power; L.t=0;
+    if(World.ready){ knocked.add(L.i); if(knocked.size===4) setTimeout(()=>award('letters'),900) }
     if(World.ready){ SFX.kick(); tone(220,.3,'square',.15,0,110) }
     return true;
   }
@@ -686,6 +749,36 @@ function initWorld(){
     if(night && World.ready && !World.create){ fwTimer-=dt; if(fwTimer<=0){ fwTimer=1.6+Math.random()*2.6; firework((Math.random()-.5)*30,11+Math.random()*6,-12-Math.random()*12) } }
   }
   World.isNight=()=>night;
+  // ---- trophy shelf ----
+  const shelf=new T.Group(), SX=-11.5, SZ=4.5; shelf.position.set(SX,0,SZ); scene.add(shelf); shelf.lookAt(0,0,12);
+  const cols=4, rows=Math.ceil(TROPHIES.length/cols), SW=1.9, RH=2.3, W=cols*SW+.4, H=rows*RH+.5;
+  const wood=new T.MeshStandardMaterial({color:0xb8743a,roughness:.6}), backM=new T.MeshStandardMaterial({color:0x14215a,roughness:.7});
+  const sAdd=(geo,m,x,y,z)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;shelf.add(o);return o};
+  sAdd(new T.BoxGeometry(W,H,.25),backM,0,H/2+.3,-.6);
+  for(let r=0;r<=rows;r++) sAdd(new T.BoxGeometry(W,.2,1.3),wood,0,.3+r*RH,0);
+  for(const x of [-W/2,W/2]) sAdd(new T.BoxGeometry(.25,H+.3,1.3),wood,x,H/2+.25,0);
+  const signTex=cv(512,128,(c,w,h)=>{c.fillStyle='#ffd23f';c.fillRect(0,0,w,h);c.fillStyle='#14215a';c.font='72px "Luckiest Guy",Impact,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('TROPHIES',w/2,h/2+6)});
+  sAdd(new T.BoxGeometry(4,1,.15),new T.MeshStandardMaterial({map:signTex}),0,H+.95,-.45);
+  const cupGeo=new T.LatheGeometry([[0,0],[.12,0],[.12,.08],[.07,.12],[.07,.42],[.2,.5],[.36,.62],[.44,.95],[.46,1.12],[.42,1.12],[.38,.9],[.28,.7],[0,.66]].map(([x,y])=>new T.Vector2(x,y)),32);
+  const handleGeo=new T.TorusGeometry(.17,.045,8,16,Math.PI*1.2), baseGeo=new T.BoxGeometry(.7,.28,.6);
+  const lockM=new T.MeshStandardMaterial({color:0x8892b0,transparent:true,opacity:.35,roughness:.8}), baseM=new T.MeshStandardMaterial({color:0x2a2f45,roughness:.4});
+  const tMeshes=TROPHIES.map((t,i)=>{
+    const g=new T.Group(), r=Math.floor(i/cols), c=i%cols; g.position.set((c-(cols-1)/2)*SW,.4+(rows-1-r)*RH,0); shelf.add(g);
+    const gold=new T.MeshStandardMaterial({color:METAL[t.metal],metalness:.35,roughness:.25,emissive:new T.Color(METAL[t.metal]),emissiveIntensity:.3});
+    const base=new T.Mesh(baseGeo,baseM); base.position.y=.14; g.add(base);
+    const cup=new T.Mesh(cupGeo,gold); cup.position.y=.28; cup.castShadow=true; g.add(cup);
+    for(const sx of [-1,1]){ const h=new T.Mesh(handleGeo,gold); h.position.set(sx*.44,1.12,0); h.rotation.z=sx>0?-1.1:Math.PI+1.1; g.add(h) }
+    const lab=cv(256,64,(c2,w,h)=>{c2.fillStyle='#fff';c2.font='bold 30px Fredoka,"Trebuchet MS",sans-serif';c2.textAlign='center';c2.textBaseline='middle';c2.fillText(t.name,w/2,h/2,w-8)});
+    const sp=new T.Sprite(new T.SpriteMaterial({map:lab,transparent:true})); sp.scale.set(1.8,.45,1); sp.position.y=1.75; g.add(sp);
+    return {t,g,gold,parts:g.children.filter(o=>o.isMesh&&o!==base),pop:0};
+  });
+  World.refreshTrophies=newId=>{ tMeshes.forEach(m=>{ const on=earned.includes(m.t.id); m.parts.forEach(o=>o.material=on?m.gold:lockM); if(m.t.id===newId) m.pop=1 }) };
+  World.refreshTrophies();
+  function trophyStep(dt){ tMeshes.forEach((m,i)=>{ const on=earned.includes(m.t.id); m.g.rotation.y=on?Math.sin(time*1.2+i)*.5:0; if(m.pop>0){ m.pop=Math.max(0,m.pop-dt*.8); const s=1+Math.sin(m.pop*Math.PI*3)*.35*m.pop; m.g.scale.setScalar(s) } m.gold.emissiveIntensity=night?.6:.3 }) }
+  const shelfFace=new T.Vector3(-SX,0,12-SZ).normalize();
+  World.troph=false;
+  World.setTroph=on=>{ World.troph=on; document.body.classList.toggle('troph',on);
+    if(on){ scrollTo(0,0); SFX.chime(); say('Your trophies!'); setTimeout(()=>$('#exitTroph').focus({preventScroll:true}),100) } else { $('#trophyBtn').focus({preventScroll:true}) } };
   World.ok=true;
   applyPlayer();
   // tap a ball in the world
@@ -719,6 +812,11 @@ function initWorld(){
     if(World.walk){
       walkStep(dt); kick(izzy,.7); kick(aj,.55);
       want.set(izzy.position.x*.85, 7, izzy.position.z+11); wantLook.set(izzy.position.x, 1.8, izzy.position.z-3);
+    } else if(World.troph){
+      animKid(izzy,dt,0,true); animKid(aj,dt,0,false);
+      for(const b of balls){ const dx=b.position.x-SX, dz=b.position.z-SZ, d=Math.hypot(dx,dz)||1; if(d<9){ b.userData.v.x+=dx/d*dt*45; b.userData.v.z+=dz/d*dt*45 } }
+      const far=innerWidth<700?14:9.5;
+      want.set(SX+shelfFace.x*far, 3.4+(innerWidth<700?1:0), SZ+shelfFace.z*far); wantLook.set(SX,(rows*RH)/2+.6-(innerWidth<700?.6:0),SZ);
     } else if(World.create){
       izzy.rotation.y+=dt*.7; animKid(izzy,dt,0,false); animKid(aj,dt,0,false);
       for(const b of balls){ const dx=b.position.x-izzy.position.x-1, dz=b.position.z-izzy.position.z, d=Math.hypot(dx,dz)||1; if(d<5){ b.userData.v.x+=dx/d*dt*45; b.userData.v.z+=dz/d*dt*45 } }
@@ -731,7 +829,7 @@ function initWorld(){
       const sc=Math.min(1.5,scrollY/innerHeight);
       want.set(Math.sin(time*.12)*3.5+px*2.5, 4.2-py*1.2+sc*3, 17-sc*2); wantLook.set(0,2.2+sc*.5,0);
     }
-    petStep(dt); letterStep(dt); nightStep(dt);
+    petStep(dt); letterStep(dt); nightStep(dt); trophyStep(dt);
     const kf=1-Math.exp(-dt*(World.walk?5:3)); camPos.lerp(want,kf); look.lerp(wantLook,kf);
     camera.position.copy(camPos); camera.lookAt(look);
     renderer.render(scene,camera); requestAnimationFrame(frame);
@@ -753,7 +851,7 @@ $('#throw').addEventListener('click',e=>{
 });
 $('#grid').addEventListener('click',e=>{
   const c=e.target.closest('.card'); if(!c) return; const g=GAMES[+c.dataset.g]; initAudio();
-  if(g.status==='ready'&&g.url){ SFX.chime(); burst(...centerOf(c),60); setTimeout(()=>location.href=g.url,500); return }
+  if(g.status==='ready'&&g.url){ award('game-'+slugOf(g.url)); SFX.chime(); burst(...centerOf(c),60); setTimeout(()=>location.href=g.url,500); return }
   SFX.soon(); c.classList.remove('wiggle'); void c.offsetWidth; c.classList.add('wiggle'); toast('Coming soon!'); burst(...centerOf(c),14);
 });
 $('#teamGrid').addEventListener('click',e=>{
@@ -767,7 +865,9 @@ $('#toGames').addEventListener('click',()=>{ SFX.tick(); focusEl(document.queryS
 { let n=false; try{ n=localStorage.getItem('izzy-night')==='1' }catch(e){}
   if(World.ok&&n) World.setNight(true);
   $('#nightBtn').addEventListener('click',()=>{ initAudio(); if(!World.ok) return; const on=!World.isNight(); World.setNight(on); try{ localStorage.setItem('izzy-night',on?'1':'0') }catch(e){}
-    if(on){ say('Night time! Lights on!'); [392,523,659,784].forEach((f,i)=>tone(f,.5,'triangle',.3,i*.1)); setTimeout(()=>{ World.firework(-6,12,-14); World.firework(6,13,-16) },300) } else { say('Good morning!'); SFX.chime() } }); }
+    if(on){ setTimeout(()=>award('night'),1500); say('Night time! Lights on!'); [392,523,659,784].forEach((f,i)=>tone(f,.5,'triangle',.3,i*.1)); setTimeout(()=>{ World.firework(-6,12,-14); World.firework(6,13,-16) },300) } else { say('Good morning!'); SFX.chime() } }); }
+$('#trophyBtn').addEventListener('click',()=>{ initAudio(); if(World.ok) World.setTroph(true); else toast(TROPHIES.filter(t=>earned.includes(t.id)).length+' trophies!') });
+$('#exitTroph').addEventListener('click',()=>{ SFX.tick(); World.setTroph(false) });
 $('#playerBtn').addEventListener('click',()=>{ initAudio(); if(World.ok) World.setCreate(true) });
 $('#explore').addEventListener('click',()=>{ initAudio(); if(World.ok) World.setWalk(true) });
 $('#exitWalk').addEventListener('click',()=>{ SFX.tick(); World.setWalk(false) });
@@ -779,7 +879,7 @@ $('#jumpBtn').addEventListener('pointerdown',e=>{ e.preventDefault(); World.doJu
   const end=()=>{ id=null; World.touch.x=World.touch.y=0; kn.style.transform='' };
   st.addEventListener('pointerup',end); st.addEventListener('pointercancel',end); }
 if(!World.ok) document.body.classList.add('nogl');
-$('#home').addEventListener('click',()=>{ if(World.walk) World.setWalk(false); if(World.create) World.setCreate(false); SFX.tick(); scrollTo({top:0,behavior:reduce?'auto':'smooth'}) });
+$('#home').addEventListener('click',()=>{ if(World.walk) World.setWalk(false); if(World.troph) World.setTroph(false); if(World.create) World.setCreate(false); SFX.tick(); scrollTo({top:0,behavior:reduce?'auto':'smooth'}) });
 
 /* ---------- start screen ---------- */
 let started=false;
@@ -789,6 +889,7 @@ function start(){
   SFX.chime(); if(musicOn) setTimeout(startMusic,700);
   setTimeout(()=>{ burst(innerWidth/2,innerHeight*.35,120); say("Hi Izzy! Let's play!") },900);
   setTimeout(()=>document.querySelector('.ball').focus({preventScroll:true}),1200);
+  if(pendingT.length) setTimeout(()=>[...pendingT].forEach(award),2600);
 }
 $('#start').addEventListener('click',start);
 $('#go').focus();
@@ -807,7 +908,7 @@ function move(dir){
   if(best){ focusEl(best); SFX.tick() }
 }
 function pressA(){ if(!started) return start(); const a=document.activeElement; if(a&&a.matches('[data-nav]')) a.click(); else move('down') }
-function pressB(){ if(!started) return start(); if(World.create) return World.setCreate(false); SFX.tick(); scrollTo({top:0,behavior:reduce?'auto':'smooth'}); setTimeout(()=>document.querySelector('.ball').focus({preventScroll:true}),300) }
+function pressB(){ if(!started) return start(); if(World.create) return World.setCreate(false); if(World.troph) return World.setTroph(false); SFX.tick(); scrollTo({top:0,behavior:reduce?'auto':'smooth'}); setTimeout(()=>document.querySelector('.ball').focus({preventScroll:true}),300) }
 const KEYS={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
 const WK={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
 addEventListener('keyup',e=>{ const k=WK[e.key]; if(k) World.keys[k]=false });
@@ -815,6 +916,7 @@ addEventListener('blur',()=>{ World.keys={} });
 addEventListener('keydown',e=>{
   if(!started){ if(['Enter',' ','Spacebar'].includes(e.key)||KEYS[e.key]){ e.preventDefault(); start() } return }
   if(World.create && e.key==='Escape'){ World.setCreate(false); return }
+  if(World.troph && (e.key==='Escape'||e.key==='Backspace')){ e.preventDefault(); World.setTroph(false); return }
   if(World.walk){ const k=WK[e.key]; if(k){ e.preventDefault(); World.keys[k]=true } else if(e.key===' '||e.key==='Spacebar'){ e.preventDefault(); World.doJump() } else if(e.key==='Escape'||e.key==='Backspace'){ e.preventDefault(); World.setWalk(false) } return }
   if(KEYS[e.key]){ e.preventDefault(); move(KEYS[e.key]) }
   else if(e.key==='Escape'||e.key==='GamepadB'){ pressB() }
